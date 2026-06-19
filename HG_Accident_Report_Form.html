@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Holmes Geospatial — Accident / Incident Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Lato:ital,wght@0,400;0,700;1,400&display=swap');
+
+  :root{
+    --hg-blue:#00567D;
+    --hg-deep:#004D69;
+    --hg-orange:#E96C2F;
+    --ink:#1a2226;
+    --line:#9aa6ac;
+    --soft:#eef3f6;
+    --soft2:#f6f9fb;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{
+    font-family:'Lato',Arial,sans-serif;
+    color:var(--ink);
+    background:#dde6eb;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    position:sticky;top:0;z-index:50;
+    background:var(--hg-deep);
+    display:flex;flex-wrap:wrap;gap:8px;
+    align-items:center;justify-content:center;
+    padding:10px 14px;
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+  }
+  .toolbar button{
+    font-family:'Oswald',sans-serif;font-weight:500;
+    text-transform:uppercase;letter-spacing:.04em;
+    font-size:13px;cursor:pointer;
+    border:none;border-radius:4px;
+    padding:9px 16px;color:#fff;
+    transition:filter .15s ease;
+  }
+  .toolbar button:hover{filter:brightness(1.12);}
+  .btn-print{background:var(--hg-orange);}
+  .btn-export{background:var(--hg-blue);}
+  .btn-import{background:var(--hg-blue);}
+  .btn-clear{background:#7a8a91;}
+  .toolbar .sep{width:1px;height:24px;background:rgba(255,255,255,.25);margin:0 4px;}
+  .toolbar .hint{color:#cfe0e9;font-size:11px;width:100%;text-align:center;margin-top:2px;}
+
+  /* ---------- Page ---------- */
+  .page{
+    background:#fff;
+    width:8.5in;min-height:11in;
+    margin:18px auto;
+    padding:0.55in 0.65in 0.5in;
+    box-shadow:0 4px 18px rgba(0,0,0,.18);
+  }
+
+  /* ---------- Header ---------- */
+  .hdr{
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:3px solid var(--hg-blue);
+    padding-bottom:10px;margin-bottom:4px;
+  }
+  .hdr img{height:46px;width:auto;}
+  .hdr .titlewrap{text-align:right;}
+  .hdr h1{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    color:var(--hg-blue);margin:0;font-size:24px;
+    text-transform:uppercase;letter-spacing:.02em;line-height:1;
+  }
+  .hdr .sub{
+    font-family:'Oswald',sans-serif;font-weight:400;
+    color:var(--hg-orange);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;margin-top:3px;
+  }
+
+  /* ---------- Instruction banner ---------- */
+  .banner{
+    background:var(--soft);border-left:3px solid var(--hg-orange);
+    padding:8px 12px;font-size:12px;line-height:1.45;
+    border-radius:0 4px 4px 0;margin-bottom:4px;color:#3a5060;
+  }
+  .banner strong{color:var(--ink);}
+
+  /* ---------- Sections ---------- */
+  .section{margin-top:14px;}
+  .section h2{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+    color:#fff;background:var(--hg-blue);
+    margin:0 0 10px;padding:5px 10px;border-radius:3px;
+  }
+  .grid{display:grid;gap:10px 22px;}
+  .grid.two{grid-template-columns:1fr 1fr;}
+  .grid.three{grid-template-columns:1fr 1fr 1fr;}
+  .grid.sig{grid-template-columns:1.7fr 1fr;}
+
+  .field label{
+    display:block;font-family:'Oswald',sans-serif;font-weight:500;
+    font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--hg-deep);margin-bottom:3px;
+  }
+  .field input[type=text],
+  .field input[type=tel],
+  .field input[type=date],
+  .field input[type=time],
+  .field select{
+    width:100%;font-family:'Lato',sans-serif;font-size:14px;
+    color:var(--ink);border:none;border-bottom:1.5px solid var(--line);
+    background:var(--soft2);padding:6px 8px;border-radius:3px 3px 0 0;
+  }
+  .field input:focus,
+  .field select:focus{outline:none;border-bottom-color:var(--hg-orange);background:#fff;}
+  .field textarea{
+    width:100%;font-family:'Lato',sans-serif;font-size:13px;color:var(--ink);
+    border:1.5px solid var(--line);background:var(--soft2);
+    padding:7px 8px;border-radius:3px;resize:vertical;min-height:68px;line-height:1.5;
+  }
+  .field textarea:focus{outline:none;border-color:var(--hg-orange);background:#fff;}
+
+  /* ---------- Radio / checkbox chips (same as PTO "opt") ---------- */
+  .types{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:4px;}
+  .opt{position:relative;}
+  .opt input{display:none;}
+  .opt label{
+    display:inline-block;cursor:pointer;white-space:nowrap;line-height:1;
+    font-family:'Lato',sans-serif;font-size:13px;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:5px;
+    padding:7px 12px;background:var(--soft2);
+    text-transform:none;letter-spacing:0;margin:0;font-weight:400;
+  }
+  .opt label .box{
+    display:inline-block;width:14px;height:14px;border:1.5px solid var(--line);
+    border-radius:3px;background:#fff;position:relative;
+    vertical-align:-2px;margin-right:7px;
+  }
+  .opt input:checked + label{
+    border-color:var(--hg-orange);background:#fff;
+    box-shadow:inset 0 0 0 1px var(--hg-orange);
+  }
+  .opt input:checked + label .box{
+    background:var(--hg-orange);border-color:var(--hg-orange);
+  }
+  .opt input:checked + label .box::after{
+    content:"";position:absolute;left:4px;top:1px;
+    width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;
+    transform:rotate(45deg);
+  }
+  .opt input:focus-visible + label{outline:2px solid var(--hg-blue);outline-offset:2px;}
+
+  /* ---------- Inline yes/no rows ---------- */
+  .inline{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .inline .q{font-family:'Lato';font-size:14px;}
+
+  /* ---------- Conditional blocks ---------- */
+  .conditional{display:none;margin-top:10px;}
+  .conditional.visible{display:block;}
+  .other-detail input[type=text]{
+    width:100%;font-family:'Lato',sans-serif;font-size:13px;color:var(--ink);
+    border:none;border-bottom:1.5px solid var(--line);
+    background:var(--soft2);padding:6px 8px;border-radius:3px 3px 0 0;
+    margin-top:6px;
+  }
+  .other-detail input[type=text]:focus{outline:none;border-bottom-color:var(--hg-orange);background:#fff;}
+
+  /* ---------- Signature / date lines ---------- */
+  .dateline{
+    display:block;width:100%;height:30px;
+    border:none;border-bottom:1.5px solid var(--ink);
+    background:transparent;border-radius:0;
+    font-family:'Lato',sans-serif;font-size:14px;color:var(--ink);
+    padding:2px 2px;
+  }
+  .dateline:focus{outline:none;border-bottom-color:var(--hg-orange);}
+  .sigline .line{border-bottom:1.5px solid var(--ink);height:30px;}
+  .sigline .cap{
+    font-family:'Oswald',sans-serif;font-weight:500;font-size:10px;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--hg-deep);
+    margin-top:3px;
+  }
+
+  /* ---------- Signature canvas ---------- */
+  .canvas-wrap{
+    border:1.5px solid var(--line);border-radius:3px;
+    background:var(--soft2);position:relative;touch-action:none;
+    overflow:hidden;
+  }
+  .canvas-wrap canvas{display:block;width:100%;}
+  .canvas-clear{
+    position:absolute;top:5px;right:7px;
+    background:rgba(255,255,255,.85);border:1px solid var(--line);
+    border-radius:3px;font-size:10px;padding:2px 7px;cursor:pointer;
+    font-family:'Oswald',sans-serif;color:var(--hg-deep);letter-spacing:.04em;
+  }
+  .canvas-hint{font-size:11px;color:#6b7f96;margin-top:3px;font-style:italic;}
+
+  /* ---------- Photo upload ---------- */
+  .photo-drop{
+    border:2px dashed var(--line);border-radius:4px;
+    background:var(--soft2);padding:22px 16px;text-align:center;
+    cursor:pointer;transition:border-color .2s,background .2s;
+    position:relative;
+  }
+  .photo-drop:hover,.photo-drop.dragover{
+    border-color:var(--hg-blue);background:#e6eff5;
+  }
+  .photo-drop input[type=file]{
+    position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+  }
+  .photo-drop .drop-icon{font-size:28px;line-height:1;margin-bottom:6px;}
+  .photo-drop .drop-label{
+    font-family:'Oswald',sans-serif;font-weight:500;font-size:13px;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--hg-deep);
+  }
+  .photo-drop .drop-sub{font-size:11px;color:#6b7f96;margin-top:3px;}
+  .photo-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+    gap:8px;margin-top:10px;
+  }
+  .photo-thumb{
+    position:relative;border-radius:3px;overflow:hidden;
+    border:1.5px solid var(--line);aspect-ratio:1;background:#eee;
+  }
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .remove-photo{
+    position:absolute;top:3px;right:3px;
+    background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;
+    width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;
+    cursor:pointer;padding:0;font-family:'Oswald',sans-serif;
+  }
+  .photo-count{font-size:11px;color:#6b7f96;margin-top:5px;font-style:italic;}
+
+  /* ---------- Witness rows ---------- */
+  .witness-block{margin-bottom:10px;}
+  .add-witness{
+    background:none;border:1.5px dashed var(--line);border-radius:3px;
+    width:100%;padding:8px;font-size:12px;color:#6b7f96;cursor:pointer;
+    font-family:'Lato',sans-serif;margin-top:6px;
+    transition:border-color .2s,color .2s;
+  }
+  .add-witness:hover{border-color:var(--hg-blue);color:var(--hg-blue);}
+
+  /* ---------- Supervisor block ---------- */
+  .supervisor{margin-top:18px;border-top:1px dashed var(--line);padding-top:6px;}
+
+  /* ---------- Acknowledgment ---------- */
+  .ack{
+    background:var(--soft);border-left:3px solid var(--hg-orange);
+    padding:10px 12px;font-size:12.5px;line-height:1.45;border-radius:0 4px 4px 0;
+  }
+
+  /* ---------- Submit button ---------- */
+  .submit-wrap{margin-top:18px;text-align:center;}
+  .btn-submit{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    text-transform:uppercase;letter-spacing:.06em;
+    font-size:14px;cursor:pointer;
+    border:none;border-radius:4px;
+    padding:12px 40px;color:#fff;
+    background:var(--hg-orange);
+    transition:filter .15s;
+  }
+  .btn-submit:hover{filter:brightness(1.1);}
+  .btn-submit:disabled{background:var(--line);cursor:not-allowed;}
+
+  /* ---------- Footer ---------- */
+  .footnote{
+    margin-top:22px;text-align:center;
+    font-family:'Oswald',sans-serif;font-size:10px;
+    color:var(--line);letter-spacing:.06em;text-transform:uppercase;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;bottom:24px;left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--hg-deep);color:#fff;
+    padding:12px 24px;border-radius:30px;
+    font-family:'Lato',sans-serif;font-size:14px;font-weight:700;
+    box-shadow:0 6px 24px rgba(0,0,0,.25);
+    transition:transform .35s cubic-bezier(.22,1,.36,1);
+    z-index:999;max-width:90vw;text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.error{background:#b91c1c;}
+
+  /* ---------- Print ---------- */
+  @media print{
+    .toolbar{display:none;}
+    .page{margin:0;box-shadow:none;width:100%;}
+    .btn-submit{display:none;}
+    .canvas-clear{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Toolbar (matches PTO form) ── -->
+<div class="toolbar">
+  <button class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+  <div class="sep"></div>
+  <button class="btn-export" onclick="exportJSON()">⬇ Download Draft</button>
+  <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Load Draft</button>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+  <div class="sep"></div>
+  <button class="btn-clear" onclick="clearForm()">✕ Clear</button>
+  <div class="hint">Use "Print / Save PDF" to save a copy &nbsp;•&nbsp; "Download Draft" saves your progress to resume later</div>
+</div>
+
+<!-- ── Paper page ── -->
+<div class="page">
+
+  <!-- Header -->
+  <div class="hdr">
+    <!-- Logo placeholder — swap src for the real HG logo path on SharePoint -->
+    <svg width="120" height="46" viewBox="0 0 120 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="120" height="46" rx="3" fill="#00567D"/>
+      <text x="10" y="30" font-family="Oswald,sans-serif" font-weight="700" font-size="22" fill="#fff" letter-spacing="1">HOLMES</text>
+      <text x="10" y="42" font-family="Oswald,sans-serif" font-weight="400" font-size="10" fill="#E96C2F" letter-spacing="3">GEOSPATIAL</text>
+    </svg>
+    <div class="titlewrap">
+      <h1>Accident / Incident Report</h1>
+      <div class="sub">Holmes Geospatial, PA &nbsp;·&nbsp; Submit within 24 hours</div>
+    </div>
+  </div>
+
+  <div class="banner">
+    <strong>Instructions:</strong> Complete immediately after any vehicle accident or incident. Attach photos or additional documents as needed. Submit within 24 hours. Use <em>Print / Save PDF</em> in the toolbar to produce a signed copy for your records.
+  </div>
+
+  <form id="accidentForm" novalidate>
+
+    <!-- S1: Employee -->
+    <div class="section">
+      <h2>Section 1 — Employee Information</h2>
+      <div class="grid two">
+        <div class="field"><label>Driver's Name *</label><input type="text" id="driverName" placeholder="Full name"></div>
+        <div class="field"><label>Phone *</label><input type="tel" id="phone" placeholder="(___) ___-____"></div>
+      </div>
+      <div class="grid two" style="margin-top:10px;">
+        <div class="field"><label>Department *</label><input type="text" id="employeeDept" placeholder="e.g. Field Ops"></div>
+        <div class="field"><label>Driver's License # / State</label><input type="text" id="dlNumber" placeholder="e.g. A1234567 / TX"></div>
+      </div>
+      <div class="grid two" style="margin-top:10px;">
+        <div class="field"><label>Work Email *</label><input type="text" id="employeeEmail" placeholder="e.g. jsmith@holmesgeospatial.com"></div>
+      </div>
+    </div>
+
+    <!-- S2: Vehicle -->
+    <div class="section">
+      <h2>Section 2 — Vehicle Information</h2>
+      <div class="grid two">
+        <div class="field"><label>Company Vehicle / Unit ID *</label><input type="text" id="vehicleId" placeholder="e.g. HG-UNIT-07"></div>
+        <div class="field"><label>Make / Model / Year</label><input type="text" id="vehicleMake" placeholder="e.g. Ford F-250 2022"></div>
+      </div>
+      <div class="grid two" style="margin-top:10px;">
+        <div class="field"><label>License Plate &amp; State</label><input type="text" id="licensePlate" placeholder="e.g. ABC-1234 TX"></div>
+        <div class="field"><label>Mileage at Time of Incident</label><input type="text" id="mileage" placeholder="e.g. 47,822"></div>
+      </div>
+    </div>
+
+    <!-- S3: Accident Details -->
+    <div class="section">
+      <h2>Section 3 — Accident Details</h2>
+      <div class="grid three">
+        <div class="field"><label>Date *</label><input type="date" id="accidentDate"></div>
+        <div class="field"><label>Time *</label><input type="time" id="accidentTime"></div>
+        <div class="field"><label>Exact Location *</label><input type="text" id="location" placeholder="Address or intersection"></div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="field"><label>Weather Conditions</label>
+          <div class="types">
+            <span class="opt"><input type="checkbox" id="wSunny" name="weather" value="Sunny"><label for="wSunny"><span class="box"></span>Sunny</label></span>
+            <span class="opt"><input type="checkbox" id="wRain" name="weather" value="Rain"><label for="wRain"><span class="box"></span>Rain</label></span>
+            <span class="opt"><input type="checkbox" id="wSnow" name="weather" value="Snow"><label for="wSnow"><span class="box"></span>Snow</label></span>
+            <span class="opt"><input type="checkbox" id="wFog" name="weather" value="Fog"><label for="wFog"><span class="box"></span>Fog</label></span>
+            <span class="opt"><input type="checkbox" id="wOther" name="weather" value="Other"><label for="wOther"><span class="box"></span>Other</label></span>
+          </div>
+          <div class="other-detail conditional" id="weatherOtherWrap">
+            <input type="text" id="weatherOther" placeholder="Describe other weather condition…">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="field"><label>Road Conditions</label>
+          <div class="types">
+            <span class="opt"><input type="checkbox" id="rDry" name="road" value="Dry"><label for="rDry"><span class="box"></span>Dry</label></span>
+            <span class="opt"><input type="checkbox" id="rWet" name="road" value="Wet"><label for="rWet"><span class="box"></span>Wet</label></span>
+            <span class="opt"><input type="checkbox" id="rIcy" name="road" value="Icy"><label for="rIcy"><span class="box"></span>Icy</label></span>
+            <span class="opt"><input type="checkbox" id="rGravel" name="road" value="Gravel"><label for="rGravel"><span class="box"></span>Gravel</label></span>
+            <span class="opt"><input type="checkbox" id="rOther" name="road" value="Other"><label for="rOther"><span class="box"></span>Other</label></span>
+          </div>
+          <div class="other-detail conditional" id="roadOtherWrap">
+            <input type="text" id="roadOther" placeholder="Describe other road condition…">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="field"><label>Traffic Conditions</label>
+          <div class="types">
+            <span class="opt"><input type="radio" id="tLight" name="traffic" value="Light"><label for="tLight"><span class="box"></span>Light</label></span>
+            <span class="opt"><input type="radio" id="tMod" name="traffic" value="Moderate"><label for="tMod"><span class="box"></span>Moderate</label></span>
+            <span class="opt"><input type="radio" id="tHeavy" name="traffic" value="Heavy"><label for="tHeavy"><span class="box"></span>Heavy</label></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4: Description -->
+    <div class="section">
+      <h2>Section 4 — Accident Description</h2>
+      <div class="field">
+        <label>Description of Events *</label>
+        <textarea id="description" rows="5" placeholder="Describe direction of travel, sequence of events, and immediate aftermath..."></textarea>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Scene Photos — attach photos of vehicle damage, road conditions, or surroundings</label>
+        <div class="photo-drop" id="photoDrop">
+          <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+          <div class="drop-icon">📷</div>
+          <div class="drop-label">Tap to add photos</div>
+          <div class="drop-sub">JPG, PNG, HEIC — up to 10 photos, 10 MB each</div>
+        </div>
+        <div class="photo-grid" id="photoGrid"></div>
+        <div class="photo-count" id="photoCount"></div>
+      </div>
+    </div>
+
+    <!-- S5: Other Parties -->
+    <div class="section">
+      <h2>Section 5 — Other Parties Involved</h2>
+      <div class="grid two">
+        <div class="field"><label>Other Driver Name</label><input type="text" id="otherDriverName" placeholder="Full name"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="otherDriverPhone" placeholder="(___) ___-____"></div>
+      </div>
+      <div class="grid" style="margin-top:10px;">
+        <div class="field"><label>Insurance Company / Policy #</label><input type="text" id="otherInsurance" placeholder="e.g. State Farm / POL-00123456"></div>
+      </div>
+      <div class="grid two" style="margin-top:10px;">
+        <div class="field"><label>Vehicle Make / Model / Year</label><input type="text" id="otherVehicle" placeholder="e.g. Toyota Camry 2019"></div>
+        <div class="field"><label>License Plate</label><input type="text" id="otherPlate" placeholder="e.g. XYZ-9876 TX"></div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Passengers / Pedestrians (names &amp; contact info)</label>
+        <textarea id="passengers" rows="2" placeholder="List all names and contact information..."></textarea>
+      </div>
+    </div>
+
+    <!-- S6: Injuries -->
+    <div class="section">
+      <h2>Section 6 — Injuries</h2>
+      <div class="inline">
+        <span class="q">Were there any injuries?</span>
+        <span class="opt"><input type="radio" id="injYes" name="injuries" value="Yes"><label for="injYes"><span class="box"></span>Yes</label></span>
+        <span class="opt"><input type="radio" id="injNo" name="injuries" value="No"><label for="injNo"><span class="box"></span>No</label></span>
+      </div>
+      <div class="conditional" id="injuryDetails">
+        <div class="field" style="margin-top:10px;">
+          <label>Describe injured persons and nature of injuries</label>
+          <textarea id="injuryDescription" rows="3" placeholder="Name, role (driver/passenger/pedestrian), and description of injury..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S7: Law Enforcement -->
+    <div class="section">
+      <h2>Section 7 — Law Enforcement &amp; Reports</h2>
+      <div class="inline">
+        <span class="q">Was law enforcement called?</span>
+        <span class="opt"><input type="radio" id="lawYes" name="lawEnforcement" value="Yes"><label for="lawYes"><span class="box"></span>Yes</label></span>
+        <span class="opt"><input type="radio" id="lawNo" name="lawEnforcement" value="No"><label for="lawNo"><span class="box"></span>No</label></span>
+      </div>
+      <div class="conditional" id="lawDetails">
+        <div class="grid two" style="margin-top:10px;">
+          <div class="field"><label>Agency</label><input type="text" id="lawAgency" placeholder="e.g. Austin PD"></div>
+          <div class="field"><label>Report #</label><input type="text" id="reportNumber" placeholder="e.g. 2024-0042"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S8: Witnesses -->
+    <div class="section">
+      <h2>Section 8 — Witnesses</h2>
+      <div id="witnessContainer">
+        <div class="witness-block">
+          <div class="grid two">
+            <div class="field"><label>Witness Name</label><input type="text" name="witnessName[]" placeholder="Full name"></div>
+            <div class="field"><label>Contact Info</label><input type="text" name="witnessContact[]" placeholder="Phone or email"></div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="add-witness" onclick="addWitness()">+ Add another witness</button>
+    </div>
+
+    <!-- S9: Employee Statement -->
+    <div class="section">
+      <h2>Section 9 — Employee Statement</h2>
+      <div class="ack">
+        I certify that the above information is true and accurate to the best of my knowledge. I understand this report will be reviewed by the Safety Committee and retained as part of Holmes Geospatial's incident records.
+      </div>
+      <div class="grid sig" style="margin-top:12px;">
+        <div>
+          <div class="field"><label>Signature</label></div>
+          <div class="canvas-wrap">
+            <canvas id="sigCanvas" style="height:80px;display:block;width:100%;"></canvas>
+            <button type="button" class="canvas-clear" onclick="clearCanvas('sigCanvas')">CLEAR</button>
+          </div>
+          <div class="canvas-hint">Sign using your finger or mouse.</div>
+        </div>
+        <div class="sigline">
+          <input type="date" id="signatureDate" class="dateline">
+          <div class="cap">Date</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S10: Supervisor Review -->
+    <div class="section supervisor">
+      <h2>Section 10 — Supervisor / Fleet Manager Review</h2>
+      <div class="grid two">
+        <div class="field"><label>Reviewed By</label><input type="text" id="reviewedBy" placeholder="Supervisor name"></div>
+        <div class="field"><label>Review Date</label><input type="date" id="reviewDate"></div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Notes / Actions Taken</label>
+        <textarea id="reviewNotes" rows="3" placeholder="Document any follow-up actions, corrective measures, or notes..."></textarea>
+      </div>
+      <div class="grid sig" style="margin-top:12px;">
+        <div class="sigline"><div class="line"></div><div class="cap">Supervisor Signature</div></div>
+        <div class="sigline"><input type="date" id="supSignDate" class="dateline"><div class="cap">Date</div></div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button type="submit" class="btn-submit" id="submitBtn">Submit Incident Report to Safety Committee</button>
+    </div>
+
+  </form>
+
+  <div class="footnote">Holmes Geospatial, PA &nbsp;•&nbsp; www.holmesgeospatial.com &nbsp;•&nbsp; Accident / Incident Report — Confidential</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Power Automate endpoint ─────────────────────────────────────────
+// IT: Replace this URL with your Flow's HTTP POST trigger URL.
+const POWER_AUTOMATE_URL = "https://default8b89733e16dc40f78f48ec42831d22.1b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/b1eaaabca75449a89f9ff483cd0e0a96/triggers/manual/paths/invoke?api-version=1";
+
+// ── Field lists for save/load ───────────────────────────────────────
+var TEXT_IDS = ['driverName','phone','employeeDept','dlNumber','employeeEmail','vehicleId','vehicleMake',
+  'licensePlate','mileage','accidentDate','accidentTime','location','description',
+  'weatherOther','roadOther',
+  'otherDriverName','otherDriverPhone','otherInsurance','otherVehicle','otherPlate',
+  'passengers','injuryDescription','lawAgency','reportNumber',
+  'signatureDate','reviewedBy','reviewDate','reviewNotes','supSignDate'];
+var RADIO_GROUPS = ['traffic','injuries','lawEnforcement'];
+var CHECK_GROUPS = ['weather','road'];
+
+// ── Photo upload ────────────────────────────────────────────────────
+var uploadedPhotos = []; // [{name, dataUrl}]
+
+function handlePhotoSelect(ev) {
+  var files = Array.from(ev.target.files);
+  if (uploadedPhotos.length + files.length > 10) {
+    showToast('Maximum 10 photos allowed.', true);
+    files = files.slice(0, 10 - uploadedPhotos.length);
+  }
+  files.forEach(function(file) {
+    if (file.size > 10 * 1024 * 1024) { showToast(file.name + ' exceeds 10 MB and was skipped.', true); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      uploadedPhotos.push({name: file.name, dataUrl: e.target.result});
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  ev.target.value = '';
+}
+
+function removePhoto(idx) {
+  uploadedPhotos.splice(idx, 1);
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  var grid = document.getElementById('photoGrid');
+  var count = document.getElementById('photoCount');
+  grid.innerHTML = '';
+  uploadedPhotos.forEach(function(p, i) {
+    var div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = '<img src="'+p.dataUrl+'" alt="'+p.name+'"><button type="button" class="remove-photo" onclick="removePhoto('+i+')" title="Remove">✕</button>';
+    grid.appendChild(div);
+  });
+  count.textContent = uploadedPhotos.length > 0 ? uploadedPhotos.length + ' photo' + (uploadedPhotos.length > 1 ? 's' : '') + ' attached' : '';
+}
+
+// Drag-and-drop support
+var drop = document.getElementById('photoDrop');
+drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('dragover'); });
+drop.addEventListener('dragleave', function(){ drop.classList.remove('dragover'); });
+drop.addEventListener('drop', function(e){
+  e.preventDefault(); drop.classList.remove('dragover');
+  var files = Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); });
+  handlePhotoSelect({target:{files:files,value:''}});
+});
+
+// ── Conditional reveals ─────────────────────────────────────────────
+document.getElementById('wOther').addEventListener('change', function(){
+  document.getElementById('weatherOtherWrap').classList.toggle('visible', this.checked);
+  if(!this.checked) document.getElementById('weatherOther').value = '';
+});
+document.getElementById('rOther').addEventListener('change', function(){
+  document.getElementById('roadOtherWrap').classList.toggle('visible', this.checked);
+  if(!this.checked) document.getElementById('roadOther').value = '';
+});
+document.querySelectorAll('input[name="injuries"]').forEach(function(r){
+  r.addEventListener('change', function(){
+    document.getElementById('injuryDetails').classList.toggle('visible', r.value==='Yes' && r.checked);
+  });
+});
+document.querySelectorAll('input[name="lawEnforcement"]').forEach(function(r){
+  r.addEventListener('change', function(){
+    document.getElementById('lawDetails').classList.toggle('visible', r.value==='Yes' && r.checked);
+  });
+});
+
+// ── Add witness ─────────────────────────────────────────────────────
+function addWitness() {
+  var c = document.getElementById('witnessContainer');
+  var d = document.createElement('div');
+  d.className = 'witness-block';
+  d.innerHTML = '<div class="grid two" style="margin-top:8px;"><div class="field"><label>Witness Name</label><input type="text" name="witnessName[]" placeholder="Full name"></div><div class="field"><label>Contact Info</label><input type="text" name="witnessContact[]" placeholder="Phone or email"></div></div>';
+  c.appendChild(d);
+}
+
+// ── Collect all data ────────────────────────────────────────────────
+function collect() {
+  var d = {_form:'HG_AccidentReport', _version:1};
+  TEXT_IDS.forEach(function(id){
+    var el = document.getElementById(id);
+    d[id] = el ? el.value : '';
+  });
+  RADIO_GROUPS.forEach(function(g){
+    var c = document.querySelector('input[name="'+g+'"]:checked');
+    d[g] = c ? c.value : '';
+  });
+  // Weather — checked chips minus "Other", then append the Other text if filled in
+  var weatherVals = Array.from(document.querySelectorAll('input[name="weather"]:checked'))
+    .map(function(x){ return x.value; }).filter(function(v){ return v !== 'Other'; });
+  var weatherOtherText = document.getElementById('weatherOther').value.trim();
+  if(weatherOtherText) weatherVals.push(weatherOtherText);
+  d.weather = weatherVals.join(', ');
+
+  // Road — same logic
+  var roadVals = Array.from(document.querySelectorAll('input[name="road"]:checked'))
+    .map(function(x){ return x.value; }).filter(function(v){ return v !== 'Other'; });
+  var roadOtherText = document.getElementById('roadOther').value.trim();
+  if(roadOtherText) roadVals.push(roadOtherText);
+  d.road = roadVals.join(', ');
+
+  // Witnesses — flatten to a single readable string for Excel
+  var wNames    = Array.from(document.querySelectorAll('input[name="witnessName[]"]')).map(function(x){ return x.value.trim(); });
+  var wContacts = Array.from(document.querySelectorAll('input[name="witnessContact[]"]')).map(function(x){ return x.value.trim(); });
+  d.witnesses = wNames.map(function(n,i){ return n ? (wContacts[i] ? n+' / '+wContacts[i] : n) : ''; }).filter(Boolean).join(' | ');
+
+  // Photos — append count + filenames to Notes
+  if(uploadedPhotos.length > 0){
+    var photoNote = uploadedPhotos.length+' photo(s): '+uploadedPhotos.map(function(p){ return p.name; }).join(', ');
+    d.reviewNotes = d.reviewNotes ? d.reviewNotes+'\n'+photoNote : photoNote;
+  }
+  d._photos = uploadedPhotos.map(function(p){ return {name:p.name, dataUrl:p.dataUrl}; });
+
+  d.signatureImage = document.getElementById('sigCanvas').toDataURL('image/png');
+  d.submittedAt = new Date().toISOString();
+  return d;
+}
+
+function apply(d) {
+  TEXT_IDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && d[id] !== undefined) el.value = d[id];
+  });
+  RADIO_GROUPS.forEach(function(g){
+    document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
+    if(d[g]){ var m=document.querySelector('input[name="'+g+'"][value="'+d[g]+'"]'); if(m) m.checked=true; }
+  });
+  CHECK_GROUPS.forEach(function(g){
+    document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
+    if(d[g]) d[g].forEach(function(v){ var m=document.querySelector('input[name="'+g+'"][value="'+v+'"]'); if(m) m.checked=true; });
+  });
+  // Restore conditionals
+  var injChecked = document.querySelector('input[name="injuries"]:checked');
+  if(injChecked && injChecked.value==='Yes') document.getElementById('injuryDetails').classList.add('visible');
+  var lawChecked = document.querySelector('input[name="lawEnforcement"]:checked');
+  if(lawChecked && lawChecked.value==='Yes') document.getElementById('lawDetails').classList.add('visible');
+}
+
+// ── Export / Import (matches PTO pattern) ──────────────────────────
+function exportJSON() {
+  var d = collect();
+  var name = (d.driverName || 'employee').trim().replace(/[^a-z0-9]+/gi,'_');
+  var fn = 'AccidentReport_' + name + '_' + new Date().toISOString().slice(0,10) + '.json';
+  var blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fn;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+
+function importJSON(ev) {
+  var file = ev.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var d = JSON.parse(reader.result);
+      if(d._form && d._form !== 'HG_AccidentReport'){
+        if(!confirm('This file is not an Accident Report file. Import anyway?')){ ev.target.value=''; return; }
+      }
+      apply(d);
+    } catch(e){
+      alert('Could not read that file — it does not appear to be valid JSON.');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearForm() {
+  if(!confirm('Clear all fields on this form?')) return;
+  TEXT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  RADIO_GROUPS.concat(CHECK_GROUPS).forEach(function(g){
+    document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
+  });
+  document.getElementById('injuryDetails').classList.remove('visible');
+  document.getElementById('lawDetails').classList.remove('visible');
+  document.getElementById('weatherOtherWrap').classList.remove('visible');
+  document.getElementById('roadOtherWrap').classList.remove('visible');
+  uploadedPhotos = []; renderPhotoGrid();
+  clearCanvas('sigCanvas');
+}
+
+// ── Toast ───────────────────────────────────────────────────────────
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 4500);
+}
+
+// ── Submit ──────────────────────────────────────────────────────────
+document.getElementById('accidentForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var required = ['driverName','phone','employeeDept','employeeEmail','accidentDate','accidentTime','location','description'];
+  var ok = true;
+  required.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el.value.trim()){ el.style.borderBottomColor='#b91c1c'; ok=false; el.addEventListener('input', function(){ el.style.borderBottomColor=''; },{once:true}); }
+  });
+  if(!ok){ showToast('Please fill in all required fields.', true); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try{
+    var payload = collect();
+    var res = await fetch(POWER_AUTOMATE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Flow returned '+res.status);
+    showToast('✅ Report submitted. The Safety Committee has been notified.');
+    clearForm();
+  } catch(err){
+    if(POWER_AUTOMATE_URL.includes('YOUR_FLOW_ID_HERE')){
+      showToast('⚙️ Power Automate URL not yet configured — contact IT.', true);
+    } else {
+      showToast('Submission failed. Please try again or contact IT.', true);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Incident Report to Safety Committee';
+  }
+});
+
+// ── Canvas (signature) ──────────────────────────────────────────────
+function setupCanvas(id) {
+  var canvas = document.getElementById(id);
+  if (!canvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  var rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0); // reset any prior scale
+  ctx.scale(dpr, dpr);
+  ctx.strokeStyle = '#1a2226';
+  ctx.lineWidth   = 1.8;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  canvas._sigCtx  = ctx;
+  canvas._drawing = false;
+
+  // Attach listeners only once
+  if (canvas._listenersAttached) return;
+  canvas._listenersAttached = true;
+
+  function getPos(e) {
+    var r = canvas.getBoundingClientRect();
+    var src = e.touches ? e.touches[0] : e;
+    return [src.clientX - r.left, src.clientY - r.top];
+  }
+  var lx = 0, ly = 0;
+  canvas.addEventListener('mousedown',  function(e){ canvas._drawing=true; var p=getPos(e); lx=p[0]; ly=p[1]; });
+  canvas.addEventListener('mousemove',  function(e){ if(!canvas._drawing) return; var p=getPos(e); var c=canvas._sigCtx; c.beginPath(); c.moveTo(lx,ly); c.lineTo(p[0],p[1]); c.stroke(); lx=p[0]; ly=p[1]; });
+  canvas.addEventListener('mouseup',    function(){ canvas._drawing=false; });
+  canvas.addEventListener('mouseleave', function(){ canvas._drawing=false; });
+  canvas.addEventListener('touchstart', function(e){ e.preventDefault(); canvas._drawing=true; var p=getPos(e); lx=p[0]; ly=p[1]; }, {passive:false});
+  canvas.addEventListener('touchmove',  function(e){ if(!canvas._drawing) return; e.preventDefault(); var p=getPos(e); var c=canvas._sigCtx; c.beginPath(); c.moveTo(lx,ly); c.lineTo(p[0],p[1]); c.stroke(); lx=p[0]; ly=p[1]; }, {passive:false});
+  canvas.addEventListener('touchend',   function(){ canvas._drawing=false; });
+}
+
+function clearCanvas(id) {
+  var canvas = document.getElementById(id);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ── Init ────────────────────────────────────────────────────────────
+window.addEventListener('load', function(){
+  setupCanvas('sigCanvas');
+  document.getElementById('signatureDate').value = new Date().toISOString().split('T')[0];
+});
+window.addEventListener('resize', function(){
+  setupCanvas('sigCanvas');
+});
+</script>
+</body>
+</html>

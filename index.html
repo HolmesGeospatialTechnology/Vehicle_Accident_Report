@@ -344,11 +344,11 @@
         <div class="field"><label>Phone *</label><input type="tel" id="phone" placeholder="(___) ___-____"></div>
       </div>
       <div class="grid two" style="margin-top:10px;">
-        <div class="field"><label>Department *</label><input type="text" id="employeeDept" placeholder="e.g. Field Ops"></div>
-        <div class="field"><label>Driver's License # / State</label><input type="text" id="dlNumber" placeholder="e.g. A1234567 / TX"></div>
+        <div class="field"><label>Department *</label><input type="text" id="employeeId" placeholder="e.g. Field Ops"></div>
+        <div class="field"><label>Work Email *</label><input type="text" id="employeeEmail" placeholder="e.g. jsmith@holmesgeospatial.com"></div>
       </div>
       <div class="grid two" style="margin-top:10px;">
-        <div class="field"><label>Work Email *</label><input type="text" id="employeeEmail" placeholder="e.g. jsmith@holmesgeospatial.com"></div>
+        <div class="field"><label>Driver's License # / State</label><input type="text" id="dlNumber" placeholder="e.g. A1234567 / TX"></div>
       </div>
     </div>
 
@@ -556,10 +556,10 @@
 <script>
 // ── Power Automate endpoint ─────────────────────────────────────────
 // IT: Replace this URL with your Flow's HTTP POST trigger URL.
-const POWER_AUTOMATE_URL = "https://default8b89733e16dc40f78f48ec42831d22.1b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/b1eaaabca75449a89f9ff483cd0e0a96/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tX5JzQlD1N6hUyZvHRZwlqajvOj1Q2ejEIoU_zaEaXg";
+const POWER_AUTOMATE_URL = "https://prod-XX.westus.logic.azure.com/workflows/YOUR_FLOW_ID_HERE/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=YOUR_SIG_HERE";
 
 // ── Field lists for save/load ───────────────────────────────────────
-var TEXT_IDS = ['driverName','phone','employeeDept','dlNumber','employeeEmail','vehicleId','vehicleMake',
+var TEXT_IDS = ['driverName','phone','employeeEmail','dlNumber','vehicleId','vehicleMake',
   'licensePlate','mileage','accidentDate','accidentTime','location','description',
   'weatherOther','roadOther',
   'otherDriverName','otherDriverPhone','otherInsurance','otherVehicle','otherPlate',
@@ -764,9 +764,9 @@ function showToast(msg, isError) {
 }
 
 // ── Submit ──────────────────────────────────────────────────────────
-document.getElementById('accidentForm').addEventListener('submit', async function(e){
+document.getElementById('accidentForm').addEventListener('submit', function(e){
   e.preventDefault();
-  var required = ['driverName','phone','employeeDept','employeeEmail','accidentDate','accidentTime','location','description'];
+  var required = ['driverName','phone','employeeId','employeeEmail','accidentDate','accidentTime','location','description'];
   var ok = true;
   required.forEach(function(id){
     var el = document.getElementById(id);
@@ -774,29 +774,51 @@ document.getElementById('accidentForm').addEventListener('submit', async functio
   });
   if(!ok){ showToast('Please fill in all required fields.', true); return; }
 
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'Submitting…';
+  var d = collect();
 
-  try{
-    var payload = collect();
-    var res = await fetch(POWER_AUTOMATE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    if(!res.ok) throw new Error('Flow returned '+res.status);
-    showToast('✅ Report submitted. The Safety Committee has been notified.');
-    clearForm();
-  } catch(err){
-    if(POWER_AUTOMATE_URL.includes('YOUR_FLOW_ID_HERE')){
-      showToast('⚙️ Power Automate URL not yet configured — contact IT.', true);
-    } else {
-      showToast('Submission failed. Please try again or contact IT.', true);
-    }
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Submit Incident Report to Safety Committee';
-  }
+  var body = [
+    'driverName: '        + d.driverName,
+    'phone: '             + d.phone,
+    'department: '        + d.employeeId,
+    'employeeEmail: '     + d.employeeEmail,
+    'dlNumber: '          + d.dlNumber,
+    'vehicleId: '         + d.vehicleId,
+    'vehicleMake: '       + d.vehicleMake,
+    'licensePlate: '      + d.licensePlate,
+    'mileage: '           + d.mileage,
+    'accidentDate: '      + d.accidentDate,
+    'accidentTime: '      + d.accidentTime,
+    'location: '          + d.location,
+    'weather: '           + d.weather,
+    'road: '              + d.road,
+    'traffic: '           + d.traffic,
+    'description: '       + d.description,
+    'otherDriverName: '   + d.otherDriverName,
+    'otherDriverPhone: '  + d.otherDriverPhone,
+    'otherInsurance: '    + d.otherInsurance,
+    'otherVehicle: '      + d.otherVehicle,
+    'otherPlate: '        + d.otherPlate,
+    'passengers: '        + d.passengers,
+    'injuries: '          + d.injuries,
+    'injuryDescription: ' + d.injuryDescription,
+    'lawEnforcement: '    + d.lawEnforcement,
+    'lawAgency: '         + d.lawAgency,
+    'reportNumber: '      + d.reportNumber,
+    'witnesses: '         + d.witnesses,
+    'signatureDate: '     + d.signatureDate,
+    'reviewedBy: '        + d.reviewedBy,
+    'reviewDate: '        + d.reviewDate,
+    'supSignDate: '       + d.supSignDate,
+    'reviewNotes: '       + d.reviewNotes
+  ].join('\n');
+
+  var subject = encodeURIComponent('New Incident Report Submitted — ' + d.driverName);
+  var bodyEncoded = encodeURIComponent(body);
+  var mailto = 'mailto:lktul@holmesgeo.com?subject=' + subject + '&body=' + bodyEncoded;
+
+  window.location.href = mailto;
+  showToast('✅ Outlook is opening to send your report. Please click Send.');
+  clearForm();
 });
 
 // ── Canvas (signature) ──────────────────────────────────────────────

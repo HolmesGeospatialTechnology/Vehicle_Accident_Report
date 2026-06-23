@@ -818,7 +818,7 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
 
   var body = bodyLines.join('%0D%0A');
 
-  var subject = encodeURIComponent('New Incident Report Submitted — ' + d.driverName);
+  var subject = encodeURIComponent('HG Incident Form Submission — ' + d.driverName);
   var mailto = 'mailto:lktul@holmesgeo.com?subject=' + subject + '&body=' + body;
 
   window.location.href = mailto;

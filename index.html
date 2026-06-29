@@ -519,23 +519,6 @@
       </div>
     </div>
 
-    <!-- S10: Supervisor Review -->
-    <div class="section supervisor">
-      <h2>Section 10 — Supervisor / Fleet Manager Review</h2>
-      <div class="grid two">
-        <div class="field"><label>Reviewed By</label><input type="text" id="reviewedBy" placeholder="Supervisor name"></div>
-        <div class="field"><label>Review Date</label><input type="date" id="reviewDate"></div>
-      </div>
-      <div class="field" style="margin-top:10px;">
-        <label>Notes / Actions Taken</label>
-        <textarea id="reviewNotes" rows="3" placeholder="Document any follow-up actions, corrective measures, or notes..."></textarea>
-      </div>
-      <div class="grid sig" style="margin-top:12px;">
-        <div class="sigline"><div class="line"></div><div class="cap">Supervisor Signature</div></div>
-        <div class="sigline"><input type="date" id="supSignDate" class="dateline"><div class="cap">Date</div></div>
-      </div>
-    </div>
-
     <!-- Submit -->
     <div class="submit-wrap">
       <button type="submit" class="btn-submit" id="submitBtn">Submit Incident Report to Safety Committee</button>
@@ -559,8 +542,7 @@ var TEXT_IDS = ['driverName','phone','employeeId','employeeEmail','dlNumber','ve
   'licensePlate','mileage','accidentDate','accidentTime','location','description',
   'weatherOther','roadOther',
   'otherDriverName','otherDriverPhone','otherInsurance','otherVehicle','otherPlate',
-  'passengers','injuryDescription','lawAgency','reportNumber',
-  'signatureDate','reviewedBy','reviewDate','reviewNotes','supSignDate'];
+  'passengers','injuryDescription','lawAgency','reportNumber','signatureDate'];
 var RADIO_GROUPS = ['traffic','injuries','lawEnforcement'];
 var CHECK_GROUPS = ['weather','road'];
 
@@ -802,11 +784,7 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
     ['lawAgency',        'lawAgency',         d.lawAgency],
     ['reportNumber',     'reportNumber',      d.reportNumber],
     ['witnesses',        'witnesses',         d.witnesses],
-    ['signatureDate',    'signatureDate',     d.signatureDate],
-    ['reviewedBy',       'reviewedBy',        d.reviewedBy],
-    ['reviewDate',       'reviewDate',        d.reviewDate],
-    ['supSignDate',      'supSignDate',       d.supSignDate],
-    ['reviewNotes',      'reviewNotes',       d.reviewNotes]
+    ['signatureDate',    'signatureDate',     d.signatureDate]
   ];
 
   // Always include required fields even if blank (Power Automate needs the label present)
@@ -826,7 +804,6 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
   clearForm();
 });
 
-// ── Canvas (signature) ──────────────────────────────────────────────
 function setupCanvas(id) {
   var canvas = document.getElementById(id);
   if (!canvas) return;

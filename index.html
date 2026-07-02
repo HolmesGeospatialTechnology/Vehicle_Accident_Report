@@ -793,8 +793,9 @@ function importJSON(ev) {
         if(!confirm('This file is not an Accident Report file. Import anyway?')){ ev.target.value=''; return; }
       }
       apply(d);
+      showToast('✅ Draft loaded successfully.');
     } catch(e){
-      alert('Could not read that file — it does not appear to be valid JSON.');
+      showToast('Could not read that file — it does not appear to be valid JSON.', true);
     }
     ev.target.value = '';
   };
@@ -802,7 +803,7 @@ function importJSON(ev) {
 }
 
 function clearForm() {
-  if(!confirm('Clear all fields on this form?')) return;
+  if(!confirm('Clear all fields on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
   TEXT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   RADIO_GROUPS.concat(CHECK_GROUPS).forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });

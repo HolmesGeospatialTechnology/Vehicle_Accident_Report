@@ -753,24 +753,32 @@ function apply(d) {
   });
   CHECK_GROUPS.forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
-    if(d[g]) d[g].forEach(function(v){ var m=document.querySelector('input[name="'+g+'"][value="'+v+'"]'); if(m) m.checked=true; });
+    if(d[g] && Array.isArray(d[g])) d[g].forEach(function(v){ var m=document.querySelector('input[name="'+g+'"][value="'+v+'"]'); if(m) m.checked=true; });
   });
-  // Restore conditionals
+  // Restore all conditional sections based on restored values
   var injChecked = document.querySelector('input[name="injuries"]:checked');
-  if(injChecked && injChecked.value==='Yes') document.getElementById('injuryDetails').classList.add('visible');
+  document.getElementById('injuryDetails').classList.toggle('visible', !!(injChecked && injChecked.value==='Yes'));
+
   var lawChecked = document.querySelector('input[name="lawEnforcement"]:checked');
-  if(lawChecked && lawChecked.value==='Yes') document.getElementById('lawDetails').classList.add('visible');
+  document.getElementById('lawDetails').classList.toggle('visible', !!(lawChecked && lawChecked.value==='Yes'));
+
+  var wOther = document.getElementById('wOther');
+  document.getElementById('weatherOtherWrap').classList.toggle('visible', !!(wOther && wOther.checked));
+
+  var rOther = document.getElementById('rOther');
+  document.getElementById('roadOtherWrap').classList.toggle('visible', !!(rOther && rOther.checked));
 }
 
 // ── Export / Import (matches PTO pattern) ──────────────────────────
 function exportJSON() {
   var d = collect();
-  // Strip all photo and image data — too large for draft files
-  delete d._photos;
-  delete d.signatureImage;
-  delete d.photoCount;
+  // Strip all large binary/image data — causes JSON to be too large or corrupted
+  var keysToDelete = ['_photos','signatureImage','photoCount'];
+  keysToDelete.forEach(function(k){ delete d[k]; });
   Object.keys(d).forEach(function(k){
-    if(k.startsWith('photo_') || k === 'photoCount') delete d[k];
+    if(k.startsWith('photo_')) delete d[k];
+    // Also strip any accidental base64 strings
+    if(typeof d[k] === 'string' && d[k].startsWith('data:')) delete d[k];
   });
   var name = (d.driverName || 'employee').trim().replace(/[^a-z0-9]+/gi,'_');
   var fn = 'AccidentReport_' + name + '_' + new Date().toISOString().slice(0,10) + '.json';

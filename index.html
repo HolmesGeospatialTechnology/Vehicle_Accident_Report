@@ -386,7 +386,7 @@
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="sep"></div>
   <button class="btn-clear" onclick="clearForm()">✕ Clear</button>
-  <div class="hint">Use "Print / Save PDF" to save a copy &nbsp;•&nbsp; "Download Draft" saves your progress to resume later</div>
+  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download Draft" saves your progress — photos must be reattached when loading a draft</div>
 </div>
 
 <!-- ── Paper page ── -->
@@ -765,6 +765,13 @@ function apply(d) {
 // ── Export / Import (matches PTO pattern) ──────────────────────────
 function exportJSON() {
   var d = collect();
+  // Strip all photo and image data — too large for draft files
+  delete d._photos;
+  delete d.signatureImage;
+  delete d.photoCount;
+  Object.keys(d).forEach(function(k){
+    if(k.startsWith('photo_') || k === 'photoCount') delete d[k];
+  });
   var name = (d.driverName || 'employee').trim().replace(/[^a-z0-9]+/gi,'_');
   var fn = 'AccidentReport_' + name + '_' + new Date().toISOString().slice(0,10) + '.json';
   var blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
@@ -870,10 +877,19 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
     .filter(function(f){ return f[2] || required_keys.indexOf(f[1]) !== -1; })
     .map(function(f){ return f[0] + ': ' + (f[2] || ''); });
 
+  // Append photo count
+  bodyLines.push('photoCount: ' + uploadedPhotos.length);
+
+  // Append each photo as a base64 data line
+  uploadedPhotos.forEach(function(p, i){
+    bodyLines.push('photo_' + (i+1) + '_name: ' + p.name);
+    bodyLines.push('photo_' + (i+1) + '_data: ' + p.dataUrl);
+  });
+
   var body = bodyLines.join('%0D%0A');
 
   var subject = encodeURIComponent('HG Incident Form Submission — ' + d.driverName);
-  var mailto = 'mailto:lktul@holmesgeo.com?subject=' + subject + '&body=' + body;
+  var mailto = 'mailto:no_reply@holmesgeo.com?subject=' + subject + '&body=' + body;
 
   window.location.href = mailto;
   showToast('✅ Outlook is opening to send your report. Please click Send.');

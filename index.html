@@ -402,7 +402,7 @@
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="sep"></div>
   <button class="btn-clear" onclick="clearForm()">✕ Clear</button>
-  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download Draft" saves your progress — photos must be reattached when loading a draft</div>
+  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download Draft" saves your progress and preserves uploaded photos in the draft</div>
 </div>
 
 <!-- ── Paper page ── -->
@@ -637,6 +637,46 @@ var TEXT_IDS = ['driverName','phone','employeeId','employeeEmail','dlNumber','ve
   'passengers','injuryDescription','lawAgency','reportNumber','signatureDate'];
 var RADIO_GROUPS = ['traffic','injuries','lawEnforcement'];
 var CHECK_GROUPS = ['weather','road'];
+var uploadedPhotos = []; // {name, dataUrl}
+
+function handlePhotoSelect(ev) {
+  var files = (ev.target && ev.target.files) || (ev.dataTransfer && ev.dataTransfer.files);
+  if (!files || !files.length) return;
+  files = Array.from(files);
+  if (uploadedPhotos.length + files.length > 10) {
+    showToast('Maximum 10 photos allowed.', true);
+    files = files.slice(0, 10 - uploadedPhotos.length);
+  }
+  files.forEach(function(file){
+    if (!file.type || !file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      uploadedPhotos.push({name: file.name, dataUrl: e.target.result});
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  if (ev.target) ev.target.value = '';
+}
+
+function renderPhotoGrid() {
+  var grid = document.getElementById('photoGrid');
+  var count = document.getElementById('photoCount');
+  if (!grid || !count) return;
+  grid.innerHTML = '';
+  uploadedPhotos.forEach(function(photo, idx){
+    var thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.innerHTML = '<img src="' + photo.dataUrl + '" alt="' + photo.name + '"><button type="button" class="remove-photo" onclick="removePhoto(' + idx + ')">×</button>';
+    grid.appendChild(thumb);
+  });
+  count.textContent = uploadedPhotos.length ? uploadedPhotos.length + ' photo' + (uploadedPhotos.length === 1 ? '' : 's') + ' attached' : '';
+}
+
+function removePhoto(idx) {
+  uploadedPhotos.splice(idx, 1);
+  renderPhotoGrid();
+}
 
 // ── Conditional reveals ─────────────────────────────────────────────
 document.getElementById('wOther').addEventListener('change', function(){
@@ -697,6 +737,18 @@ function collect() {
   var wContacts = Array.from(document.querySelectorAll('input[name="witnessContact[]"]')).map(function(x){ return x.value.trim(); });
   d.witnesses = wNames.map(function(n,i){ return n ? (wContacts[i] ? n+' / '+wContacts[i] : n) : ''; }).filter(Boolean).join(' | ');
 
+  if (uploadedPhotos.length > 0) {
+    d.photoCount = uploadedPhotos.length;
+    d.photoNames = uploadedPhotos.map(function(p){ return p.name; }).join(', ');
+    d._photos = uploadedPhotos.map(function(p){ return {name: p.name, dataUrl: p.dataUrl}; });
+    var photoNote = uploadedPhotos.length + ' photo(s): ' + uploadedPhotos.map(function(p){ return p.name; }).join(', ');
+    d.reviewNotes = d.reviewNotes ? d.reviewNotes + '\n' + photoNote : photoNote;
+  } else {
+    d.photoCount = '';
+    d.photoNames = '';
+    d._photos = [];
+  }
+
   d.signatureImage = document.getElementById('sigCanvas').toDataURL('image/png');
   d.submittedAt = new Date().toISOString();
   return d;
@@ -732,12 +784,12 @@ function apply(d) {
 // ── Export / Import (matches PTO pattern) ──────────────────────────
 function exportJSON() {
   var d = collect();
-  // Strip all large binary/image data — causes JSON to be too large or corrupted
-  var keysToDelete = ['_photos','signatureImage','photoCount'];
+  // Preserve uploaded photo metadata in the draft
+  var keysToDelete = ['signatureImage'];
   keysToDelete.forEach(function(k){ delete d[k]; });
   Object.keys(d).forEach(function(k){
     if(k.startsWith('photo_')) delete d[k];
-    // Also strip any accidental base64 strings
+    // Also strip any accidental base64 strings left behind by bad data
     if(typeof d[k] === 'string' && d[k].startsWith('data:')) delete d[k];
   });
   var name = (d.driverName || 'employee').trim().replace(/[^a-z0-9]+/gi,'_');
@@ -761,6 +813,8 @@ function importJSON(ev) {
         if(!confirm('This file is not an Accident Report file. Import anyway?')){ ev.target.value=''; return; }
       }
       apply(d);
+      uploadedPhotos = Array.isArray(d._photos) ? d._photos : [];
+      renderPhotoGrid();
       showToast('✅ Draft loaded successfully.');
     } catch(e){
       showToast('Could not read that file — it does not appear to be valid JSON.', true);
@@ -780,6 +834,8 @@ function clearForm() {
   document.getElementById('lawDetails').classList.remove('visible');
   document.getElementById('weatherOtherWrap').classList.remove('visible');
   document.getElementById('roadOtherWrap').classList.remove('visible');
+  uploadedPhotos = [];
+  renderPhotoGrid();
   clearCanvas('sigCanvas');
 }
 
@@ -835,6 +891,8 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
     ['lawAgency',        'lawAgency',         d.lawAgency],
     ['reportNumber',     'reportNumber',      d.reportNumber],
     ['witnesses',        'witnesses',         d.witnesses],
+    ['photoCount',        'photoCount',        d.photoCount],
+    ['photoNames',        'photoNames',        d.photoNames],
     ['signatureDate',    'signatureDate',     d.signatureDate]
   ];
 
@@ -903,6 +961,20 @@ function clearCanvas(id) {
 window.addEventListener('load', function(){
   setupCanvas('sigCanvas');
   document.getElementById('signatureDate').value = new Date().toISOString().split('T')[0];
+  renderPhotoGrid();
+  var photoDrop = document.getElementById('photoDrop');
+  if (photoDrop) {
+    ['dragenter','dragover'].forEach(function(evt){
+      photoDrop.addEventListener(evt, function(e){ e.preventDefault(); photoDrop.classList.add('dragover'); });
+    });
+    ['dragleave','drop'].forEach(function(evt){
+      photoDrop.addEventListener(evt, function(e){ e.preventDefault(); photoDrop.classList.remove('dragover'); });
+    });
+    photoDrop.addEventListener('drop', function(e){
+      e.preventDefault();
+      handlePhotoSelect({dataTransfer: e.dataTransfer, target: document.getElementById('photoInput')});
+    });
+  }
 });
 window.addEventListener('resize', function(){
   setupCanvas('sigCanvas');

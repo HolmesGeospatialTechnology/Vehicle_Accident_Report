@@ -200,7 +200,6 @@
   }
   .canvas-hint{font-size:11px;color:#6b7f96;margin-top:3px;font-style:italic;}
 
-  /* ---------- Photo upload ---------- */
   .photo-drop{
     border:2px dashed var(--line);border-radius:4px;
     background:var(--soft2);padding:22px 16px;text-align:center;
@@ -324,54 +323,71 @@
 
   /* ---------- Print ---------- */
   @media print{
-    @page{ size: letter; margin: 0.35in; }
+    @page{ size: letter; margin: 0.5in; }
     .toolbar{display:none;}
     .page{
       margin:0;box-shadow:none;width:100%;
-      padding:0.15in 0.2in 0.1in;
-      min-height:unset;
+      padding:0;min-height:unset;
     }
     .btn-submit{display:none;}
     .canvas-clear{display:none;}
     .submit-wrap{display:none;}
     .add-witness{display:none;}
-    /* Tighten up section spacing */
-    .section{margin-top:5px;}
-    .section h2{padding:3px 8px;font-size:10px;margin-bottom:5px;}
-    .section-body,.grid{gap:5px 14px;}
+    .photo-drop .drop-icon{display:none;}
+
+    /* Header */
+    .hdr{padding-bottom:8px;margin-bottom:6px;}
+    .hdr img{height:38px;}
+    .hdr h1{font-size:18px;}
+    .hdr .sub{font-size:10px;}
+
+    /* Banner */
+    .banner{padding:6px 10px;font-size:11px;margin-bottom:8px;}
+
+    /* Sections */
+    .section{margin-top:10px;}
+    .section h2{padding:4px 10px;font-size:11px;margin-bottom:7px;}
+    .grid{gap:7px 18px;}
     .grid.two{grid-template-columns:1fr 1fr;}
     .grid.three{grid-template-columns:1fr 1fr 1fr;}
-    /* Smaller inputs */
-    .field label{font-size:9px;margin-bottom:1px;}
+
+    /* Fields */
+    .field label{font-size:9.5px;margin-bottom:2px;}
     .field input[type=text],
     .field input[type=tel],
     .field input[type=date],
     .field input[type=time],
-    .field select{font-size:11px;padding:3px 5px;}
-    .field textarea{font-size:11px;min-height:40px;padding:3px 5px;}
+    .field select{font-size:12px;padding:4px 6px;}
+    .field textarea{font-size:12px;min-height:48px;padding:4px 6px;}
+
     /* Chips */
-    .opt label{font-size:10px;padding:3px 7px;}
-    .types{gap:4px 6px;}
-    /* Photo upload — show count only */
-    .photo-drop{padding:6px;font-size:10px;}
-    .photo-drop .drop-icon{display:none;}
-    .photo-grid{grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:4px;}
-    /* Header */
-    .hdr{padding-bottom:5px;margin-bottom:2px;}
-    .hdr img{height:32px;}
-    .hdr h1{font-size:16px;}
-    .hdr .sub{font-size:9px;}
-    /* Banner */
-    .banner{padding:5px 8px;font-size:10px;margin-bottom:2px;}
-    /* Ack */
-    .ack{padding:6px 8px;font-size:10px;}
-    /* Sig */
-    .sigline .line{height:20px;}
-    .canvas-wrap canvas{height:50px !important;}
-    /* Footnote */
-    .footnote{margin-top:8px;font-size:8px;}
+    .opt label{font-size:11px;padding:4px 9px;}
+    .types{gap:5px 7px;}
+
+    /* Photo upload */
+    .photo-drop{padding:8px;font-size:11px;}
+    .photo-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;}
+
+    /* Acknowledgment */
+    .ack{padding:8px 10px;font-size:11px;}
+
+    /* Signature */
+    .sigline .line{height:24px;}
+    .canvas-wrap{max-width:3in;}
+    .canvas-wrap canvas{height:60px !important;}
+    .canvas-hint{display:none;}
+
     /* Witness */
-    .witness-block{margin-bottom:5px;}
+    .witness-block{margin-bottom:7px;}
+
+    /* Footnote */
+    .footnote{margin-top:12px;font-size:9px;}
+
+    /* Hide toast during print */
+    .toast{display:none !important;}
+
+    /* Page break — put sections 1-5 on page 1, 6-9 on page 2 */
+    .section:nth-child(6){page-break-before:always;}
   }
 </style>
 </head>
@@ -386,7 +402,7 @@
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="sep"></div>
   <button class="btn-clear" onclick="clearForm()">✕ Clear</button>
-  <div class="hint">Use "Print / Save PDF" to save a copy &nbsp;•&nbsp; "Download Draft" saves your progress to resume later</div>
+  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download Draft" saves your progress — photos must be reattached when loading a draft</div>
 </div>
 
 <!-- ── Paper page ── -->
@@ -595,6 +611,12 @@
       </div>
     </div>
 
+    <!-- Photo reminder -->
+    <div style="background:#E6F1FB;border-left:3px solid #00567D;border-radius:0 4px 4px 0;padding:12px 16px;margin-bottom:14px;">
+      <p style="font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;color:#00567D;margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em;">📎 Including Photos</p>
+      <p style="font-family:'Lato',sans-serif;font-size:13px;color:#1a2226;margin:0;line-height:1.5;">When Outlook opens, <strong>attach your scene photos directly to the email</strong> before clicking Send. Photos will be automatically saved to the Safety Committee SharePoint folder.</p>
+    </div>
+
     <!-- Submit -->
     <div class="submit-wrap">
       <button type="submit" class="btn-submit" id="submitBtn">Submit Incident Report to Safety Committee</button>
@@ -621,55 +643,6 @@ var TEXT_IDS = ['driverName','phone','employeeId','employeeEmail','dlNumber','ve
   'passengers','injuryDescription','lawAgency','reportNumber','signatureDate'];
 var RADIO_GROUPS = ['traffic','injuries','lawEnforcement'];
 var CHECK_GROUPS = ['weather','road'];
-
-// ── Photo upload ────────────────────────────────────────────────────
-var uploadedPhotos = []; // [{name, dataUrl}]
-
-function handlePhotoSelect(ev) {
-  var files = Array.from(ev.target.files);
-  if (uploadedPhotos.length + files.length > 10) {
-    showToast('Maximum 10 photos allowed.', true);
-    files = files.slice(0, 10 - uploadedPhotos.length);
-  }
-  files.forEach(function(file) {
-    if (file.size > 10 * 1024 * 1024) { showToast(file.name + ' exceeds 10 MB and was skipped.', true); return; }
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      uploadedPhotos.push({name: file.name, dataUrl: e.target.result});
-      renderPhotoGrid();
-    };
-    reader.readAsDataURL(file);
-  });
-  ev.target.value = '';
-}
-
-function removePhoto(idx) {
-  uploadedPhotos.splice(idx, 1);
-  renderPhotoGrid();
-}
-
-function renderPhotoGrid() {
-  var grid = document.getElementById('photoGrid');
-  var count = document.getElementById('photoCount');
-  grid.innerHTML = '';
-  uploadedPhotos.forEach(function(p, i) {
-    var div = document.createElement('div');
-    div.className = 'photo-thumb';
-    div.innerHTML = '<img src="'+p.dataUrl+'" alt="'+p.name+'"><button type="button" class="remove-photo" onclick="removePhoto('+i+')" title="Remove">✕</button>';
-    grid.appendChild(div);
-  });
-  count.textContent = uploadedPhotos.length > 0 ? uploadedPhotos.length + ' photo' + (uploadedPhotos.length > 1 ? 's' : '') + ' attached' : '';
-}
-
-// Drag-and-drop support
-var drop = document.getElementById('photoDrop');
-drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('dragover'); });
-drop.addEventListener('dragleave', function(){ drop.classList.remove('dragover'); });
-drop.addEventListener('drop', function(e){
-  e.preventDefault(); drop.classList.remove('dragover');
-  var files = Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); });
-  handlePhotoSelect({target:{files:files,value:''}});
-});
 
 // ── Conditional reveals ─────────────────────────────────────────────
 document.getElementById('wOther').addEventListener('change', function(){
@@ -730,13 +703,6 @@ function collect() {
   var wContacts = Array.from(document.querySelectorAll('input[name="witnessContact[]"]')).map(function(x){ return x.value.trim(); });
   d.witnesses = wNames.map(function(n,i){ return n ? (wContacts[i] ? n+' / '+wContacts[i] : n) : ''; }).filter(Boolean).join(' | ');
 
-  // Photos — append count + filenames to Notes
-  if(uploadedPhotos.length > 0){
-    var photoNote = uploadedPhotos.length+' photo(s): '+uploadedPhotos.map(function(p){ return p.name; }).join(', ');
-    d.reviewNotes = d.reviewNotes ? d.reviewNotes+'\n'+photoNote : photoNote;
-  }
-  d._photos = uploadedPhotos.map(function(p){ return {name:p.name, dataUrl:p.dataUrl}; });
-
   d.signatureImage = document.getElementById('sigCanvas').toDataURL('image/png');
   d.submittedAt = new Date().toISOString();
   return d;
@@ -753,18 +719,33 @@ function apply(d) {
   });
   CHECK_GROUPS.forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
-    if(d[g]) d[g].forEach(function(v){ var m=document.querySelector('input[name="'+g+'"][value="'+v+'"]'); if(m) m.checked=true; });
+    if(d[g] && Array.isArray(d[g])) d[g].forEach(function(v){ var m=document.querySelector('input[name="'+g+'"][value="'+v+'"]'); if(m) m.checked=true; });
   });
-  // Restore conditionals
+  // Restore all conditional sections based on restored values
   var injChecked = document.querySelector('input[name="injuries"]:checked');
-  if(injChecked && injChecked.value==='Yes') document.getElementById('injuryDetails').classList.add('visible');
+  document.getElementById('injuryDetails').classList.toggle('visible', !!(injChecked && injChecked.value==='Yes'));
+
   var lawChecked = document.querySelector('input[name="lawEnforcement"]:checked');
-  if(lawChecked && lawChecked.value==='Yes') document.getElementById('lawDetails').classList.add('visible');
+  document.getElementById('lawDetails').classList.toggle('visible', !!(lawChecked && lawChecked.value==='Yes'));
+
+  var wOther = document.getElementById('wOther');
+  document.getElementById('weatherOtherWrap').classList.toggle('visible', !!(wOther && wOther.checked));
+
+  var rOther = document.getElementById('rOther');
+  document.getElementById('roadOtherWrap').classList.toggle('visible', !!(rOther && rOther.checked));
 }
 
 // ── Export / Import (matches PTO pattern) ──────────────────────────
 function exportJSON() {
   var d = collect();
+  // Strip all large binary/image data — causes JSON to be too large or corrupted
+  var keysToDelete = ['_photos','signatureImage','photoCount'];
+  keysToDelete.forEach(function(k){ delete d[k]; });
+  Object.keys(d).forEach(function(k){
+    if(k.startsWith('photo_')) delete d[k];
+    // Also strip any accidental base64 strings
+    if(typeof d[k] === 'string' && d[k].startsWith('data:')) delete d[k];
+  });
   var name = (d.driverName || 'employee').trim().replace(/[^a-z0-9]+/gi,'_');
   var fn = 'AccidentReport_' + name + '_' + new Date().toISOString().slice(0,10) + '.json';
   var blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
@@ -786,8 +767,9 @@ function importJSON(ev) {
         if(!confirm('This file is not an Accident Report file. Import anyway?')){ ev.target.value=''; return; }
       }
       apply(d);
+      showToast('✅ Draft loaded successfully.');
     } catch(e){
-      alert('Could not read that file — it does not appear to be valid JSON.');
+      showToast('Could not read that file — it does not appear to be valid JSON.', true);
     }
     ev.target.value = '';
   };
@@ -795,7 +777,7 @@ function importJSON(ev) {
 }
 
 function clearForm() {
-  if(!confirm('Clear all fields on this form?')) return;
+  if(!confirm('Clear all fields on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
   TEXT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   RADIO_GROUPS.concat(CHECK_GROUPS).forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
@@ -804,7 +786,6 @@ function clearForm() {
   document.getElementById('lawDetails').classList.remove('visible');
   document.getElementById('weatherOtherWrap').classList.remove('visible');
   document.getElementById('roadOtherWrap').classList.remove('visible');
-  uploadedPhotos = []; renderPhotoGrid();
   clearCanvas('sigCanvas');
 }
 
@@ -870,13 +851,14 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
     .filter(function(f){ return f[2] || required_keys.indexOf(f[1]) !== -1; })
     .map(function(f){ return f[0] + ': ' + (f[2] || ''); });
 
+  // Append photo count
   var body = bodyLines.join('%0D%0A');
 
   var subject = encodeURIComponent('HG Incident Form Submission — ' + d.driverName);
-  var mailto = 'mailto:lktul@holmesgeo.com?subject=' + subject + '&body=' + body;
+  var mailto = 'mailto:no_reply@holmesgeo.com?subject=' + subject + '&body=' + body;
 
   window.location.href = mailto;
-  showToast('✅ Outlook is opening to send your report. Please click Send.');
+  showToast('✅ Outlook is opening — attach any photos then click Send.');
   clearForm();
 });
 

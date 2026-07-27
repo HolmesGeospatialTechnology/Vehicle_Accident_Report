@@ -868,11 +868,14 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
 
   fetch(POWER_AUTOMATE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(d)
   })
   .then(function(res) {
     if (!res.ok) throw new Error('Failed');
+    return res.text();
+  })
+  .then(function() {
     showToast('✅ Report submitted successfully.');
     clearForm();
   })

@@ -860,58 +860,32 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
   if(!ok){ showToast('Please fill in all required fields.', true); return; }
 
   var d = collect();
+  var btn = document.getElementById('submitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+  }
 
-  // Only include fields that have a value
-  var fields = [
-    ['driverName',       'driverName',        d.driverName],
-    ['phone',            'phone',             d.phone],
-    ['department',       'department',        d.employeeId],
-    ['employeeEmail',    'employeeEmail',     d.employeeEmail],
-    ['dlNumber',         'dlNumber',          d.dlNumber],
-    ['vehicleId',        'vehicleId',         d.vehicleId],
-    ['vehicleMake',      'vehicleMake',       d.vehicleMake],
-    ['licensePlate',     'licensePlate',      d.licensePlate],
-    ['mileage',          'mileage',           d.mileage],
-    ['accidentDate',     'accidentDate',      d.accidentDate],
-    ['accidentTime',     'accidentTime',      d.accidentTime],
-    ['location',         'location',          d.location],
-    ['weather',          'weather',           d.weather],
-    ['road',             'road',              d.road],
-    ['traffic',          'traffic',           d.traffic],
-    ['description',      'description',       d.description],
-    ['otherDriverName',  'otherDriverName',   d.otherDriverName],
-    ['otherDriverPhone', 'otherDriverPhone',  d.otherDriverPhone],
-    ['otherInsurance',   'otherInsurance',    d.otherInsurance],
-    ['otherVehicle',     'otherVehicle',      d.otherVehicle],
-    ['otherPlate',       'otherPlate',        d.otherPlate],
-    ['passengers',       'passengers',        d.passengers],
-    ['injuries',         'injuries',          d.injuries],
-    ['injuryDescription','injuryDescription', d.injuryDescription],
-    ['lawEnforcement',   'lawEnforcement',    d.lawEnforcement],
-    ['lawAgency',        'lawAgency',         d.lawAgency],
-    ['reportNumber',     'reportNumber',      d.reportNumber],
-    ['witnesses',        'witnesses',         d.witnesses],
-    ['photoCount',        'photoCount',        d.photoCount],
-    ['photoNames',        'photoNames',        d.photoNames],
-    ['signatureDate',    'signatureDate',     d.signatureDate]
-  ];
-
-  // Always include required fields even if blank (Power Automate needs the label present)
-  var required_keys = ['driverName','phone','department','employeeEmail','accidentDate','accidentTime','location','description'];
-
-  var bodyLines = fields
-    .filter(function(f){ return f[2] || required_keys.indexOf(f[1]) !== -1; })
-    .map(function(f){ return f[0] + ': ' + (f[2] || ''); });
-
-  // Append photo count
-  var body = bodyLines.join('%0D%0A');
-
-  var subject = encodeURIComponent('HG Incident Form Submission — ' + d.driverName);
-  var mailto = 'mailto:no_reply@holmesgeo.com?subject=' + subject + '&body=' + body;
-
-  window.location.href = mailto;
-  showToast('✅ Outlook is opening — attach any photos then click Send.');
-  clearForm();
+  fetch(POWER_AUTOMATE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(d)
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('Failed');
+    showToast('✅ Report submitted successfully.');
+    clearForm();
+  })
+  .catch(function(err) {
+    console.error(err);
+    showToast('Submission failed. Please try again or contact IT.', true);
+  })
+  .finally(function() {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Incident Report to Safety Committee';
+    }
+  });
 });
 
 function setupCanvas(id) {

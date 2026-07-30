@@ -402,7 +402,7 @@
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="sep"></div>
   <button class="btn-clear" onclick="clearForm()">✕ Clear</button>
-  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download Draft" saves your progress and preserves uploaded photos in the draft</div>
+  <div class="hint">Use "Print / Save PDF" to save a signed copy &nbsp;•&nbsp; "Download JSON" saves your progress and preserves uploaded photos in the draft</div>
 </div>
 
 <!-- ── Paper page ── -->
@@ -414,12 +414,12 @@
     <img src="https://raw.githubusercontent.com/LKtul/Vehicle_Accident_Report/main/Holmes%20Geospatial%20Logo__Email.png" alt="Holmes Geospatial" style="height:46px;width:auto;">
     <div class="titlewrap">
       <h1>Accident / Incident Report</h1>
-      <div class="sub">Holmes Geospatial, PA &nbsp;·&nbsp; Submit within 24 hours</div>
+      <div class="sub">Holmes Geospatial, PA &nbsp;·&nbsp; <span style="color:#ff1f1f;font-weight:400;">Submit within 24 hours of incident.</span></div>
     </div>
   </div>
 
   <div class="banner">
-    <strong>Instructions:</strong> Complete immediately after any vehicle accident or incident. Attach additional documents as needed. Submit within 24 hours. Use <em>Print / Save PDF</em> in the toolbar to produce a signed copy for your records.
+    <strong>Instructions:</strong> Complete immediately after any vehicle accident or incident. Attach additional documents as needed. Use <em>Print / Save PDF</em> in the toolbar to produce a signed copy for HG records and send to Supervisor. <span style="color:#ff1f1f;font-weight:500;">Submit within 24 hours of incident.</span>
   </div>
 
   <form id="accidentForm" novalidate>
@@ -825,7 +825,7 @@ function importJSON(ev) {
 }
 
 function clearForm() {
-  if(!confirm('Clear all fields on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
+  if(!confirm('The data has been submitted and sent to the Safety Committee. Clear all field on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
   TEXT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   RADIO_GROUPS.concat(CHECK_GROUPS).forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });

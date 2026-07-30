@@ -825,7 +825,7 @@ function importJSON(ev) {
 }
 
 function clearForm() {
-  if(!confirm('The data has been submitted and sent to the Safety Committee. Clear all field on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
+  if(!confirm('Clear all fields on this form?\n\nNote: Any attached photos will also be removed and will need to be re-uploaded.')) return;
   TEXT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   RADIO_GROUPS.concat(CHECK_GROUPS).forEach(function(g){
     document.querySelectorAll('input[name="'+g+'"]').forEach(function(r){ r.checked=false; });
@@ -877,7 +877,9 @@ document.getElementById('accidentForm').addEventListener('submit', function(e){
   })
   .then(function() {
     showToast('✅ Report submitted successfully.');
-    clearForm();
+    if (!confirm('The data has been submitted and sent to the Safety Committee. Before clearing all fields, please use Print / Save PDF to send to your Supervisor.')) {
+      return;
+    }
   })
   .catch(function(err) {
     console.error(err);

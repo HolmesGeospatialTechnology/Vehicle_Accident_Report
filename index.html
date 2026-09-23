@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Holmes Geospatial — Accident / Incident Report</title>
+<meta name="description" content="Holmes Geospatial mobile Accident and Incident Report form for vehicle accidents and workplace incidents.">
+<meta name="keywords" content="Holmes Geospatial, vehicle inspection, inspection, accident report, incident report, accident, incident">
+<title>Holmes Geospatial — Accident and Incident Report</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Lato:ital,wght@0,400;0,700;1,400&display=swap');
 
@@ -18,7 +20,7 @@
     color-scheme:light;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-x:none;}
   body{
     font-family:'Lato',Arial,sans-serif;
     color:var(--ink);
@@ -49,6 +51,7 @@
   .btn-export{background:var(--hg-blue);}
   .btn-import{background:var(--hg-blue);}
   .btn-clear{background:#7a8a91;}
+  .btn-qr{display:none;background:var(--hg-orange);}
   .toolbar .sep{width:1px;height:24px;background:rgba(255,255,255,.25);margin:0 4px;}
   .toolbar .hint{color:#cfe0e9;font-size:11px;width:100%;text-align:center;margin-top:2px;}
 
@@ -87,6 +90,19 @@
     border-radius:0 4px 4px 0;margin-bottom:4px;color:#3a5060;
   }
   .banner strong{color:var(--ink);}
+
+  /* ---------- Mobile access QR code ---------- */
+  .qr-access{
+    display:flex;align-items:center;gap:16px;
+    background:#fff7f2;border:1px solid #f2c3a8;border-left:4px solid var(--hg-orange);
+    padding:10px 12px;margin:12px 0 4px;border-radius:0 4px 4px 0;
+  }
+  .qr-code{position:relative;flex:0 0 116px;width:116px;height:116px;padding:6px;background:#fff;border:1px solid #d8e0e4;border-radius:4px;}
+  .qr-code img:first-child{display:block;width:104px;height:104px;}
+  .qr-code .qr-icon{position:absolute;left:43px;top:43px;width:30px;height:30px;padding:4px;background:#fff;border-radius:4px;object-fit:contain;}
+  .qr-copy{font-size:12px;line-height:1.45;color:#3a5060;}
+  .qr-copy strong{display:block;font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.03em;text-transform:uppercase;color:var(--hg-deep);margin-bottom:2px;}
+  .qr-copy a{color:var(--hg-blue);font-weight:700;word-break:break-word;}
 
   /* ---------- Sections ---------- */
   .section{margin-top:14px;}
@@ -293,9 +309,12 @@
   @media (max-width: 900px){
     .toolbar{padding:10px;gap:6px;}
     .toolbar button{min-height:44px;width:100%;}
+    .btn-qr{display:block;}
     .toolbar .sep{display:none;}
     .toolbar .hint{margin-top:6px;line-height:1.4;}
-    .page{width:min(100%, 8.5in);margin:12px auto;padding:18px 14px 20px;}
+    .page{width:100%;max-width:100%;margin:12px auto;padding:18px 14px 20px;}
+    .qr-access{display:none;}
+    .qr-access.is-visible{display:flex;}
     .hdr{flex-direction:column;align-items:flex-start;gap:10px;}
     .hdr .titlewrap{text-align:left;width:100%;}
     .hdr h1{font-size:20px;}
@@ -307,7 +326,7 @@
   @media (max-width: 480px){
     body{background:#d8e1e6;}
     .toolbar{position:static;}
-    .page{margin:0;width:100%;padding:14px 12px 18px;box-shadow:none;}
+    .page{margin:0;width:100%;max-width:100%;padding:14px 12px 18px;box-shadow:none;}
     .banner,.ack{padding:10px 12px;font-size:13px;}
     .field input[type=text],
     .field input[type=tel],
@@ -319,6 +338,8 @@
     .field textarea{min-height:92px;}
     .btn-submit{width:100%;padding:12px 16px;}
     .photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .qr-access{align-items:flex-start;}
+    .qr-copy{font-size:13px;}
   }
 
   /* ---------- Print ---------- */
@@ -396,6 +417,7 @@
 <!-- ── Toolbar (matches PTO form) ── -->
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+  <button class="btn-qr" id="qrToggle" onclick="toggleQr()" aria-expanded="false" aria-controls="reportQrPanel">▣ Show QR Code</button>
   <div class="sep"></div>
   <button class="btn-export" onclick="exportJSON()">⬇ Export JSON</button>
   <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Import JSON</button>
@@ -420,6 +442,15 @@
 
   <div class="banner">
     <strong>Instructions:</strong> Complete immediately after any vehicle accident or incident. Attach additional documents as needed. Use <em>Print / Save PDF</em> in the toolbar to produce a signed copy for HG records and send to Supervisor. <span style="color:#ff1f1f;font-weight:500;">Submit within 24 hours of incident.</span>
+  </div>
+
+  <div class="qr-access" id="reportQrPanel" aria-label="Mobile access">
+    <div class="qr-code" id="reportQr" aria-label="QR code for the Holmes Geospatial Accident and Incident Report"></div>
+    <div class="qr-copy">
+      <strong>Open on a mobile device</strong>
+      Scan this code to open the mobile-friendly Accident / Incident Report.
+      <a href="https://vehicle-accident-fda90.web.app/">vehicle-accident-fda90.web.app</a>
+    </div>
   </div>
 
   <form id="accidentForm" novalidate>
@@ -625,6 +656,31 @@
 <div class="toast" id="toast"></div>
 
 <script>
+function toggleQr() {
+  var panel = document.getElementById('reportQrPanel');
+  var button = document.getElementById('qrToggle');
+  if (!panel || !button) return;
+  var visible = panel.classList.toggle('is-visible');
+  button.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  button.textContent = visible ? '▣ Hide QR Code' : '▣ Show QR Code';
+}
+
+// ── Mobile report QR code ──────────────────────────────────────────
+const MOBILE_REPORT_URL = "https://vehicle-accident-fda90.web.app/";
+var qrScript = document.createElement('script');
+qrScript.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+qrScript.onload = function(){
+  var qrTarget = document.getElementById('reportQr');
+  if (!qrTarget) return;
+  new QRCode(qrTarget, {text: MOBILE_REPORT_URL, width:104, height:104, colorDark:'#004D69', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.H});
+  var icon = document.createElement('img');
+  icon.className = 'qr-icon';
+  icon.src = 'Holmes_O-removebg-preview (1).png';
+  icon.alt = '';
+  qrTarget.appendChild(icon);
+};
+document.head.appendChild(qrScript);
+
 // ── Power Automate endpoint ─────────────────────────────────────────
 // IT: Replace this URL with your Flow's HTTP POST trigger URL.
 const POWER_AUTOMATE_URL = "https://default8b89733e16dc40f78f48ec42831d22.1b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/f6683386a7a8487b8ebac1135ab44065/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SzHUU9sTZE6Hl6_ws1cjlk3WVJP9ziogAuO51fcGHuI";
